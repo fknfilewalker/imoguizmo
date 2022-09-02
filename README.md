@@ -3,7 +3,7 @@ A simple header only interactive orientation gizmo for ImGui.
 
 ## Usage
 ```c++
-#include "imguizmo.hpp"
+#include "imoguizmo.hpp"
 
 // specify position and size of guizmo window
 // optional: set distance to pivot (-> activates interaction)
