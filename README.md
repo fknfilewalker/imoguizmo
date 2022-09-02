@@ -1,5 +1,5 @@
 # ImOGuizmo
-A simple header only interactive orientation gizmo for ImGui. 
+A simple C++11 header only interactive orientation gizmo for ImGui. 
 
 ## Usage
 ```c++
