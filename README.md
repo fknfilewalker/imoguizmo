@@ -5,6 +5,9 @@ A simple header only interactive orientation gizmo for ImGui.
 ```c++
 #include "imguizmo.hpp"
 
+// specify position and size of guizmo window
+// optional: set distance to pivot (-> activates interaction)
+// optional: show background
 if(ImOGuizmo::drawGizmo(viewMatrix, { 0.0f, 0.0f }, 120.0f, pivotDistance, false))
 {
 	// in case of user interaction viewMatrix gets updated
