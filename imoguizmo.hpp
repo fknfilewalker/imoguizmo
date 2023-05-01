@@ -153,20 +153,11 @@ namespace ImOGuizmo {
 			for (uint32_t i = 0; i < 16; i++) out[i] = out[i] * det;
 		}
 	}
-	inline bool drawGizmo(float* viewMatrix, const ImVec2 pos, const float size, const float pivotDistance = 0.0f, const bool background = false) {
+	inline bool drawGizmo(float * const viewMatrix, const float * const projectionMatrix, const ImVec2 pos, const float size, const float pivotDistance = 0.0f, const bool background = false) {
 		const float hSize = size * 0.5f;
 		const auto center = ImVec2(pos.x + hSize, pos.y + hSize);
 		ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
 		ImGui::SetNextWindowSize({ size, size });
-		// mat
-		// to check with glm proj
-		//glm::mat4 m = glm::perspective(0.01745329251994329576923690768489f * 90.0f, 1.0f, 0.1f, 1000.0f);
-		//float *ptr = glm::value_ptr(m);
-		static const float projectionMatrix[16] = { 1.0f / (1 * tan((0.01745329251994329576923690768489f * 90.0f) / 2.0f)), 0, 0, 0,
-										0, 1.0f / tan((0.01745329251994329576923690768489f * 90.0f) / 2.0f), 0, 0,
-										0, 0, 1000.0f / (0.1f - 1000.0f), -1.0f,
-										0, 0, -(1000.0f * 0.1f) / (1000.0f - 0.1f), 0 };
-		//buildPerspectiveProjMatrix(projectionMatrix, 0.01745329251994329576923690768489f * 90.0f, 1.0f, 0.1f, 1000.0f);
 
 		float viewProjection[16];
 		internal::multiply(viewMatrix, projectionMatrix, viewProjection);
