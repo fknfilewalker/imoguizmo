@@ -254,7 +254,13 @@ namespace ImOGuizmo {
 			if (selection != -1 && ImGui::IsMouseClicked(ImGuiPopupFlags_MouseButtonLeft)) {
 				float modelMat[16];
 				internal::invert4x4(viewMatrix, modelMat);
-				const internal::ImVec3 pivotPos = internal::ImVec3(&modelMat[12]) - internal::ImVec3(&modelMat[8]) * pivotDistance;
+
+#ifdef IMOGUIZMO_RIGHT_HANDED // TODO: detect
+				internal::ImVec3 pivotPos = internal::ImVec3(&modelMat[12]) - internal::ImVec3(&modelMat[8]) * pivotDistance;
+#else
+				internal::ImVec3 pivotPos = internal::ImVec3(&modelMat[12]) + internal::ImVec3(&modelMat[8]) * pivotDistance;
+#endif
+
 				// +x axis 
 				if (selection == 0) internal::buildViewMatrix(viewMatrix, pivotPos + internal::ImVec3(pivotDistance, 0, 0), internal::ImVec3(0, 0, -1), internal::ImVec3(0, 1, 0), internal::ImVec3(1, 0, 0));
 				// +y axis 
