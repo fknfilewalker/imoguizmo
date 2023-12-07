@@ -6,8 +6,7 @@ A simple C++11 header only interactive orientation gizmo for ImGui.
 #include "imoguizmo.hpp"
 
 // it is recommended to use a separate projection matrix since the values that work best
-// can be very different from what works well with normal renderings
-// aspect ratio should be 1 otherwise axes would scale differently
+// can be very different from what works well with normal rendering
 // e.g. with glm -> glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 1000.0f);
 
 // specify position and size of guizmo window

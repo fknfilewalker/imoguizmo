@@ -162,6 +162,11 @@ namespace ImOGuizmo {
 		float viewProjection[16];
 		internal::multiply(viewMatrix, projectionMatrix, viewProjection);
 		{ viewProjection[1] *= -1; viewProjection[5] *= -1; viewProjection[9] *= -1; viewProjection[13] *= -1; } // Flip Y
+		// correction for non-square aspect ratio
+		{
+			const float aspectRatio = projectionMatrix[5] / projectionMatrix[0];
+			viewProjection[0] *= aspectRatio; viewProjection[8] *= aspectRatio;
+		}
 		// axis
 		const float axisLength = size / 3.0f;
 		const ImVec4 xAxis = internal::multiply(viewProjection, ImVec4(axisLength, 0, 0, 0));
