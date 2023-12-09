@@ -170,12 +170,12 @@ namespace ImOGuizmo {
 		float positiveRadiusScale = 0.075f;
 		float negativeRadiusScale = 0.05f;
 		float hoverCircleRadiusScale = 0.88f;
-		ImU32 redFrontColor = IM_COL32(255, 54, 83, 255);
-		ImU32 redBackColor = IM_COL32(154, 57, 71, 255);
-		ImU32 greenFrontColor = IM_COL32(138, 219, 0, 255);
-		ImU32 greenBackColor = IM_COL32(98, 138, 34, 255);
-		ImU32 blueFrontColor = IM_COL32(44, 143, 255, 255);
-		ImU32 blueBackColor = IM_COL32(52, 100, 154, 255);
+		ImU32 xCircleFrontColor = IM_COL32(255, 54, 83, 255);
+		ImU32 xCircleBackColor = IM_COL32(154, 57, 71, 255);
+		ImU32 yCircleFrontColor = IM_COL32(138, 219, 0, 255);
+		ImU32 yCircleBackColor = IM_COL32(98, 138, 34, 255);
+		ImU32 zCircleFrontColor = IM_COL32(44, 143, 255, 255);
+		ImU32 zCircleBackColor = IM_COL32(52, 100, 154, 255);
 		ImU32 hoverCircleColor = IM_COL32(100, 100, 100, 130);
 	} config;
 
@@ -229,9 +229,9 @@ namespace ImOGuizmo {
 
 		const float positiveRadius = size * config.positiveRadiusScale;
 		const float negativeRadius = size * config.negativeRadiusScale;
-		const bool redPositiveCloser = 0.0f >= xAxis.w;
-		const bool greenPositiveCloser = 0.0f >= yAxis.w;
-		const bool bluePositiveCloser = 0.0f >= zAxis.w;
+		const bool xPositiveCloser = 0.0f >= xAxis.w;
+		const bool yPositiveCloser = 0.0f >= yAxis.w;
+		const bool zPositiveCloser = 0.0f >= zAxis.w;
 
 		// sort axis based on distance
 		// 0 : +x axis, 1 : +y axis, 2 : +z axis, 3 : -x axis, 4 : -y axis, 5 : -z axis
@@ -269,22 +269,22 @@ namespace ImOGuizmo {
 		for (const auto& [fst, snd] : pairs) {
 			switch (fst) {
 			case 0: // +x axis
-				internal::drawPositiveLine(center, ImVec2{ xAxis.x, xAxis.y }, redPositiveCloser ? config.redFrontColor : config.redBackColor, positiveRadius, lineThickness, "X", selection == 0);
+				internal::drawPositiveLine(center, ImVec2{ xAxis.x, xAxis.y }, xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, positiveRadius, lineThickness, "X", selection == 0);
 				continue;
 			case 1: // +y axis
-				internal::drawPositiveLine(center, ImVec2{ yAxis.x, yAxis.y }, greenPositiveCloser ? config.greenFrontColor : config.greenBackColor, positiveRadius, lineThickness, "Y", selection == 1);
+				internal::drawPositiveLine(center, ImVec2{ yAxis.x, yAxis.y }, yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, positiveRadius, lineThickness, "Y", selection == 1);
 				continue;
 			case 2: // +z axis
-				internal::drawPositiveLine(center, ImVec2{ zAxis.x, zAxis.y }, bluePositiveCloser ? config.blueFrontColor : config.blueBackColor, positiveRadius, lineThickness, "Z", selection == 2);
+				internal::drawPositiveLine(center, ImVec2{ zAxis.x, zAxis.y }, zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, positiveRadius, lineThickness, "Z", selection == 2);
 				continue;
 			case 3: // -x axis
-				internal::drawNegativeLine(center, ImVec2{ xAxis.x, xAxis.y }, !redPositiveCloser ? config.redFrontColor : config.redBackColor, negativeRadius, selection == 3);
+				internal::drawNegativeLine(center, ImVec2{ xAxis.x, xAxis.y }, !xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, negativeRadius, selection == 3);
 				continue;
 			case 4: // -y axis
-				internal::drawNegativeLine(center, ImVec2{ yAxis.x, yAxis.y }, !greenPositiveCloser ? config.greenFrontColor : config.greenBackColor, negativeRadius, selection == 4);
+				internal::drawNegativeLine(center, ImVec2{ yAxis.x, yAxis.y }, !yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, negativeRadius, selection == 4);
 				continue;
 			case 5: // -z axis
-				internal::drawNegativeLine(center, ImVec2{ zAxis.x, zAxis.y }, !bluePositiveCloser ? config.blueFrontColor : config.blueBackColor, negativeRadius, selection == 5);
+				internal::drawNegativeLine(center, ImVec2{ zAxis.x, zAxis.y }, !zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, negativeRadius, selection == 5);
 				continue;
 			default: break;
 			}
