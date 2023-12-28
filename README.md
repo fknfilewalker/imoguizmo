@@ -15,7 +15,7 @@ A simple C++11 header only interactive orientation gizmo for ImGui.
 // specify position and size of gizmo (and its window when using ImOGuizmo::BeginFrame())
 ImOGuizmo::SetRect(0.0f /* x */, 0.0f /* y */, 120.0f /* square size */);
 ImOGuizmo::BeginFrame(); // to use you own window remove this call 
-/* and wrap everything in between ImGui::Begin() and ImGui::End() instead */
+// and wrap everything in between ImGui::Begin() and ImGui::End() instead
 
 // optional: set distance to pivot (-> activates interaction)
 if(ImOGuizmo::DrawGizmo(viewMatrix, projMat, pivotDistance /* optional: default = 0.0f */))
