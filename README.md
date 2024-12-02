@@ -23,6 +23,10 @@ if(ImOGuizmo::DrawGizmo(viewMatrix, projMat, pivotDistance /* optional: default 
 	// in case of user interaction viewMatrix gets updated
 }
 ```
+### Note
+Use `#define IMOGUIZMO_RIGHT_HANDED` in case you are using a right handed coordinate system, otherwise left handed is used.
+
+
 Drag|Click
 :-:|:-:
 ![drag_example](images/drag.gif)  |  ![click_example](images/click.gif)
