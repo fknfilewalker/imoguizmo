@@ -90,12 +90,13 @@ namespace ImOGuizmo {
 			const auto lineEndPositive = ImVec2{ center.x + axis.x, center.y + axis.y };
 			internal::config.mDrawList->AddLine(center, lineEndPositive, color, thickness);
 			internal::config.mDrawList->AddCircleFilled(lineEndPositive, radius, color);
-			const auto textPosX = ImVec2{ static_cast<float>(floor(lineEndPositive.x - 3.0f)), static_cast<float>(floor(lineEndPositive.y - 6.0f)) };
+			const auto labelSize = ImGui::CalcTextSize(text);
+			const auto textPos = ImVec2(floor(lineEndPositive.x - 0.5f * labelSize.x), floor(lineEndPositive.y - 0.5f * labelSize.y));
 			if (selected) {
 				internal::config.mDrawList->AddCircle(lineEndPositive, radius, IM_COL32_WHITE, 0, 1.1f);
-				internal::config.mDrawList->AddText(textPosX, IM_COL32_WHITE, text);
+				internal::config.mDrawList->AddText(textPos, IM_COL32_WHITE, text);
 			}
-			else internal::config.mDrawList->AddText(textPosX, IM_COL32_BLACK, text);
+			else internal::config.mDrawList->AddText(textPos, IM_COL32_BLACK, text);
 		}
 
 		inline void drawNegativeLine(const ImVec2 center, const ImVec2 axis, const ImU32 color, const float radius, const bool selected) {
