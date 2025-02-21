@@ -227,7 +227,7 @@ namespace ImOGuizmo {
 
 		const float hoverCircleRadius = hSize * config.hoverCircleRadiusScale;
 		SetDrawList(internal::config.mDrawList);
-		if (interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos)) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
+		if (config.hoverCircleColor != 0 && interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos)) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
 
 		const float positiveRadius = size * config.positiveRadiusScale;
 		const float negativeRadius = size * config.negativeRadiusScale;
