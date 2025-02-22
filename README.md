@@ -24,7 +24,7 @@ if(ImOGuizmo::DrawGizmo(viewMatrix, projMat, pivotDistance /* optional: default 
 }
 ```
 ### Note
-Use `#define IMOGUIZMO_RIGHT_HANDED` in case you are using a right handed coordinate system, otherwise left handed is used.
+Use `#define IMOGUIZMO_LEFT_HANDED` in case you are using a left handed coordinate system, otherwise right handed is used. (untested)
 Use `#define IMOGUIZMO_Z_UP` in case your coordinate system has the z axis point up, otherwise y is used.
 
 
