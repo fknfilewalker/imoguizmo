@@ -132,7 +132,7 @@ namespace ImOGuizmo {
 #ifdef IMOGUIZMO_LEFT_HANDED
 			const auto f = normalize(at - eye);
 			const auto r = normalize(cross(up, f));
-			const auto u = cross(f, s);
+			const auto u = cross(f, r);
 			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = f[0]; viewMatrix[3] = 0.0f;
 			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = f[1]; viewMatrix[7] = 0.0f;
 			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = f[2]; viewMatrix[11] = 0.0f;
@@ -140,7 +140,7 @@ namespace ImOGuizmo {
 #else
 			const auto f = normalize(at - eye);
 			const auto r = normalize(cross(f, up));
-			const auto u = cross(s, f);
+			const auto u = cross(r, f);
 			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = -f[0]; viewMatrix[3] = 0.0f;
 			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = -f[1]; viewMatrix[7] = 0.0f;
 			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = -f[2]; viewMatrix[11] = 0.0f;
@@ -306,63 +306,34 @@ namespace ImOGuizmo {
 
 			const internal::ImVec3 pivotPos = internal::ImVec3{ &modelMat[12] } - internal::ImVec3{ &modelMat[8] } *pivotDistance;
 
+			internal::ImVec3 ups[6] = { 
 #ifdef IMOGUIZMO_LEFT_HANDED
 #ifdef IMOGUIZMO_Z_UP
-			// +x axis
-			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// +y axis
-			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// +z axis
-			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, -1, 0 }, viewMatrix);
-			// -x axis 
-			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// -y axis 
-			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// -z axis 
-			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
+				{0, 0, 1}, {0, 0, 1}, {0, -1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 1, 0}
 #else // Y is up
-			// +x axis
-			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
-			// +y axis
-			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// +z axis
-			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
-			// -x axis 
-			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
-			// -y axis 
-			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, -1 }, viewMatrix);
-			// -z axis 
-			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
+				{0, 1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 1, 0}
 #endif
 #else // IMOGUIZMO_RIGHT_HANDED
 #ifdef IMOGUIZMO_Z_UP
-			// +x axis
-			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// +y axis
-			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// +z axis
-			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
-			// -x axis 
-			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// -y axis 
-			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
-			// -z axis 
-			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, -1, 0 }, viewMatrix);
+				{0, 0, 1}, {0, 0, 1}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, -1, 0}
 #else // Y is up
+				{0, 1, 0}, {0, 0, -1}, {0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 1, 0} 
+#endif
+#endif
+			};
 			// +x axis
-			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
+			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, ups[0], viewMatrix);
 			// +y axis
-			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, -1 }, viewMatrix);
+			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, ups[1], viewMatrix);
 			// +z axis
-			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
+			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, ups[2], viewMatrix);
 			// -x axis 
-			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
+			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, ups[3], viewMatrix);
 			// -y axis 
-			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, internal::ImVec3{ 0, 0, 1 }, viewMatrix);
+			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, ups[4], viewMatrix);
 			// -z axis 
-			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, internal::ImVec3{ 0, 1, 0 }, viewMatrix);
-#endif
-#endif
+			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, ups[5], viewMatrix);
+
 			return true;
 		}
 		
