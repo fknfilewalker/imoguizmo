@@ -130,20 +130,22 @@ namespace ImOGuizmo {
 		void lookAt(ImVec3 const& eye, ImVec3 const& at, ImVec3 const& up, float* viewMatrix)
 		{
 #ifdef IMOGUIZMO_LEFT_HANDED
+			const auto f = normalize(at - eye);
+			const auto r = normalize(cross(up, f));
+			const auto u = cross(f, s);
+			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = f[0]; viewMatrix[3] = 0.0f;
+			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = f[1]; viewMatrix[7] = 0.0f;
+			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = f[2]; viewMatrix[11] = 0.0f;
+			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = -dot(f, eye); viewMatrix[15] = 1.0f;
 #else
+			const auto f = normalize(at - eye);
+			const auto r = normalize(cross(f, up));
+			const auto u = cross(s, f);
+			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = -f[0]; viewMatrix[3] = 0.0f;
+			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = -f[1]; viewMatrix[7] = 0.0f;
+			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = -f[2]; viewMatrix[11] = 0.0f;
+			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = dot(f, eye); viewMatrix[15] = 1.0f;
 #endif
-			auto tmp = eye - at;
-			ImVec3 Z = normalize(tmp);
-			ImVec3 Y = normalize(up);
-			tmp = cross(Y, Z);
-			ImVec3 X = normalize(tmp);
-			tmp = cross(Z, X);
-			Y = normalize(tmp);
-
-			viewMatrix[0] = X[0]; viewMatrix[1] = Y[0]; viewMatrix[2] = Z[0]; viewMatrix[3] = 0.0f;
-			viewMatrix[4] = X[1]; viewMatrix[5] = Y[1]; viewMatrix[6] = Z[1]; viewMatrix[7] = 0.0f;
-			viewMatrix[8] = X[2]; viewMatrix[9] = Y[2]; viewMatrix[10] = Z[2]; viewMatrix[11] = 0.0f;
-			viewMatrix[12] = -dot(X, eye); viewMatrix[13] = -dot(Y, eye); viewMatrix[14] = -dot(Z, eye); viewMatrix[15] = 1.0f;
 		}
 
 		inline void invert4x4(const float* m, float* out)
