@@ -28,7 +28,6 @@ SOFTWARE.
 #include <cstring>
 #include <vector>
 #include <algorithm>
-#include <cstdint>
 
 namespace ImOGuizmo {
 	namespace internal {
@@ -170,7 +169,7 @@ namespace ImOGuizmo {
 
 			float det = m[0] * out[0] + m[1] * out[4] + m[2] * out[8] + m[3] * out[12];
 			det = 1.0f / det;
-			for (uint32_t i = 0; i < 16; i++) out[i] = out[i] * det;
+			for (unsigned int i = 0; i < 16; i++) out[i] = out[i] * det;
 		}
 	}
 
