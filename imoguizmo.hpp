@@ -28,6 +28,7 @@ SOFTWARE.
 #include <cstring>
 #include <vector>
 #include <algorithm>
+#include <cstdint>
 
 namespace ImOGuizmo {
 	namespace internal {
