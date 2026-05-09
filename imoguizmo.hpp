@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright(c) 2022 Lukas Lipp
+Copyright(c) 2026 Lukas Lipp
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this softwareand associated documentation files(the "Software"), to deal
@@ -37,6 +37,11 @@ namespace ImOGuizmo {
 			float mSize = 100.f;
 			ImDrawList* mDrawList = nullptr;
 		} config;
+		static struct Interaction {
+			bool dragging = false;
+			bool dragged = false;
+			ImVec2 clickMousePos = {};
+		} interaction;
 
 		struct ImVec3
 		{
@@ -99,6 +104,14 @@ namespace ImOGuizmo {
 		{
 			float il = 1.f / (sqrtf(dot(a, a)) + FLT_EPSILON);
 			return a * il;
+		}
+
+		inline ImVec3 rotateAroundAxis(const ImVec3& v, const ImVec3& axis, const float angle)
+		{
+			const ImVec3 n = normalize(axis);
+			const float c = cosf(angle);
+			const float s = sinf(angle);
+			return v * c + cross(n, v) * s + n * dot(n, v) * (1.0f - c);
 		}
 
 		inline bool checkInsideCircle(const ImVec2 center, const float radius, const ImVec2 point)
@@ -171,6 +184,39 @@ namespace ImOGuizmo {
 			det = 1.0f / det;
 			for (unsigned int i = 0; i < 16; i++) out[i] = out[i] * det;
 		}
+
+		inline ImVec3 worldUp()
+		{
+#ifdef IMOGUIZMO_Z_UP
+			return { 0.0f, 0.0f, 1.0f };
+#else
+			return { 0.0f, 1.0f, 0.0f };
+#endif
+		}
+
+		inline bool orbitView(float* const viewMatrix, const ImVec2 mouseDelta, const float pivotDistance)
+		{
+			if (pivotDistance <= 0.0f || (mouseDelta.x == 0.0f && mouseDelta.y == 0.0f)) return false;
+
+			float modelMat[16];
+			invert4x4(viewMatrix, modelMat);
+			const ImVec3 eye = ImVec3{ &modelMat[12] };
+			const ImVec3 pivotPos = eye - ImVec3{ &modelMat[8] } * pivotDistance;
+			ImVec3 offset = eye - pivotPos;
+			ImVec3 cameraUp = ImVec3{ &modelMat[4] };
+			ImVec3 cameraRight = ImVec3{ &modelMat[0] };
+
+			const ImVec3 orbitUp = worldUp();
+			offset = rotateAroundAxis(offset, orbitUp, -mouseDelta.x);
+			cameraUp = rotateAroundAxis(cameraUp, orbitUp, -mouseDelta.x);
+			cameraRight = rotateAroundAxis(cameraRight, orbitUp, -mouseDelta.x);
+
+			offset = rotateAroundAxis(offset, cameraRight, -mouseDelta.y);
+			cameraUp = rotateAroundAxis(cameraUp, cameraRight, -mouseDelta.y);
+
+			lookAt(pivotPos + offset, pivotPos, cameraUp, viewMatrix);
+			return true;
+		}
 	}
 
 	static struct Config {
@@ -180,6 +226,10 @@ namespace ImOGuizmo {
 		float positiveRadiusScale = 0.075f;
 		float negativeRadiusScale = 0.05f;
 		float hoverCircleRadiusScale = 0.88f;
+		// Mouse movement in pixels before a click becomes an orbit drag.
+		float dragThreshold = 3.0f;
+		float dragSensitivity = 0.01f;
+		bool drag = true;
 		ImU32 xCircleFrontColor = IM_COL32(255, 54, 83, 255);
 		ImU32 xCircleBackColor = IM_COL32(154, 57, 71, 255);
 		ImU32 yCircleFrontColor = IM_COL32(138, 219, 0, 255);
@@ -203,7 +253,7 @@ namespace ImOGuizmo {
 
 	inline void BeginFrame(const bool background = false)
 	{
-		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus | ((background != true) ? ImGuiWindowFlags_NoBackground : ImGuiWindowFlags_None);
+		const ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoBringToFrontOnFocus | ((background != true) ? ImGuiWindowFlags_NoBackground : ImGuiWindowFlags_None);
 		ImGui::SetNextWindowPos({ internal::config.mX, internal::config.mY }, ImGuiCond_Always);
 		ImGui::SetNextWindowSize({ internal::config.mSize, internal::config.mSize });
 		ImGui::Begin("imoguizmo", nullptr, flags);
@@ -233,8 +283,9 @@ namespace ImOGuizmo {
 		const ImVec2 mousePos = ImGui::GetIO().MousePos;
 
 		const float hoverCircleRadius = hSize * config.hoverCircleRadiusScale;
+		const bool hovered = interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos);
 		SetDrawList(internal::config.mDrawList);
-		if (config.hoverCircleColor != 0 && interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos)) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
+		if (config.hoverCircleColor != 0 && hovered) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
 
 		const float positiveRadius = size * config.positiveRadiusScale;
 		const float negativeRadius = size * config.negativeRadiusScale;
@@ -300,7 +351,29 @@ namespace ImOGuizmo {
 		}
 		internal::config.mDrawList = nullptr;
 
-		if (selection != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+		if (config.drag) {
+			if (internal::interaction.dragging && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+				const ImVec2 d = mousePos - internal::interaction.clickMousePos;
+				const float dragThresholdSq = config.dragThreshold * config.dragThreshold;
+				if (d.x * d.x + d.y * d.y > dragThresholdSq) {
+					internal::interaction.dragged = true;
+					return internal::orbitView(viewMatrix, ImGui::GetIO().MouseDelta * config.dragSensitivity, pivotDistance);
+				}
+			}
+
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+				internal::interaction.dragging = hovered;
+				internal::interaction.clickMousePos = mousePos;
+			}
+
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+				bool wasDragged = internal::interaction.dragged;
+				internal::interaction = {};
+				if(wasDragged) return false;
+			}
+		}
+
+		if (selection != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 			float modelMat[16];
 			internal::invert4x4(viewMatrix, modelMat);
 
