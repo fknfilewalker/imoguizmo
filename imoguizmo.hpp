@@ -26,10 +26,16 @@ SOFTWARE.
 #include <imgui.h>
 #include <cmath>
 #include <cstring>
-#include <vector>
+#include <array>
 #include <algorithm>
+#include <utility>
 
 namespace ImOGuizmo {
+	enum class CoordinateSystem {
+		XYZ, YZX, ZXY, // RHS
+		XZY, YXZ, ZYX  // LHS
+	};
+
 	namespace internal {
 		static struct Config {
 			float mX = 0.f;
@@ -106,6 +112,37 @@ namespace ImOGuizmo {
 			return a * il;
 		}
 
+		inline bool isRightHanded(const CoordinateSystem coordinateSystem)
+		{
+			switch (coordinateSystem) {
+			case CoordinateSystem::XYZ:
+			case CoordinateSystem::YZX:
+			case CoordinateSystem::ZXY:
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		inline std::array<int, 3> axes(const CoordinateSystem coordinateSystem)
+		{
+			switch (coordinateSystem) {
+			case CoordinateSystem::YZX: return { 1, 2, 0 };
+			case CoordinateSystem::ZXY: return { 2, 0, 1 };
+			case CoordinateSystem::XZY: return { 0, 2, 1 };
+			case CoordinateSystem::YXZ: return { 1, 0, 2 };
+			case CoordinateSystem::ZYX: return { 2, 1, 0 };
+			default: return { 0, 1, 2 }; // CoordinateSystem::XYZ
+			}
+		}
+
+		inline ImVec3 axisVector(const int axis, const float sign = 1.0f)
+		{
+			if (axis == 0) return { sign, 0.0f, 0.0f };
+			if (axis == 1) return { 0.0f, sign, 0.0f };
+			return { 0.0f, 0.0f, sign };
+		}
+
 		inline ImVec3 rotateAroundAxis(const ImVec3& v, const ImVec3& axis, const float angle)
 		{
 			const ImVec3 n = normalize(axis);
@@ -140,25 +177,17 @@ namespace ImOGuizmo {
 			}
 		}
 
-		void lookAt(ImVec3 const& eye, ImVec3 const& at, ImVec3 const& up, float* viewMatrix)
+		inline void lookAt(ImVec3 const& eye, ImVec3 const& at, ImVec3 const& up, float* viewMatrix, const CoordinateSystem coordinateSystem)
 		{
-#ifdef IMOGUIZMO_LEFT_HANDED
+			const bool rightHanded = isRightHanded(coordinateSystem);
 			const auto f = normalize(at - eye);
-			const auto r = normalize(cross(up, f));
-			const auto u = cross(f, r);
-			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = f[0]; viewMatrix[3] = 0.0f;
-			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = f[1]; viewMatrix[7] = 0.0f;
-			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = f[2]; viewMatrix[11] = 0.0f;
-			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = -dot(f, eye); viewMatrix[15] = 1.0f;
-#else
-			const auto f = normalize(at - eye);
-			const auto r = normalize(cross(f, up));
-			const auto u = cross(r, f);
-			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = -f[0]; viewMatrix[3] = 0.0f;
-			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = -f[1]; viewMatrix[7] = 0.0f;
-			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = -f[2]; viewMatrix[11] = 0.0f;
-			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = dot(f, eye); viewMatrix[15] = 1.0f;
-#endif
+			const auto r = normalize(rightHanded ? cross(f, up) : cross(up, f));
+			const auto u = rightHanded ? cross(r, f) : cross(f, r);
+			const float zSign = rightHanded ? -1.0f : 1.0f;
+			viewMatrix[0] = r[0]; viewMatrix[1] = u[0]; viewMatrix[2] = zSign * f[0]; viewMatrix[3] = 0.0f;
+			viewMatrix[4] = r[1]; viewMatrix[5] = u[1]; viewMatrix[6] = zSign * f[1]; viewMatrix[7] = 0.0f;
+			viewMatrix[8] = r[2]; viewMatrix[9] = u[2]; viewMatrix[10] = zSign * f[2]; viewMatrix[11] = 0.0f;
+			viewMatrix[12] = -dot(r, eye); viewMatrix[13] = -dot(u, eye); viewMatrix[14] = -zSign * dot(f, eye); viewMatrix[15] = 1.0f;
 		}
 
 		inline void invert4x4(const float* m, float* out)
@@ -185,16 +214,20 @@ namespace ImOGuizmo {
 			for (unsigned int i = 0; i < 16; i++) out[i] = out[i] * det;
 		}
 
-		inline ImVec3 worldUp()
+		inline void lookAtSelection(const ImVec3& pivotPos, const float pivotDistance, const int selection, float* viewMatrix, const CoordinateSystem coordinateSystem)
 		{
-#ifdef IMOGUIZMO_Z_UP
-			return { 0.0f, 0.0f, 1.0f };
-#else
-			return { 0.0f, 1.0f, 0.0f };
-#endif
+			const int selectedAxis = selection % 3;
+			const float selectedSign = selection < 3 ? 1.0f : -1.0f;
+			const std::array<int, 3> coordinateAxes = axes(coordinateSystem);
+			const int upAxis = coordinateAxes[1];
+			const int referenceAxis = coordinateAxes[2];
+			const float referenceSign = isRightHanded(coordinateSystem) ? -selectedSign : selectedSign;
+			const ImVec3 eye = pivotPos + axisVector(selectedAxis, selectedSign * pivotDistance);
+			const ImVec3 up = selectedAxis == upAxis ? axisVector(referenceAxis, referenceSign) : axisVector(upAxis);
+			lookAt(eye, pivotPos, up, viewMatrix, coordinateSystem);
 		}
 
-		inline bool orbitView(float* const viewMatrix, const ImVec2 mouseDelta, const float pivotDistance)
+		inline bool orbitView(float* const viewMatrix, const ImVec2 mouseDelta, const float pivotDistance, const CoordinateSystem coordinateSystem)
 		{
 			if (pivotDistance <= 0.0f || (mouseDelta.x == 0.0f && mouseDelta.y == 0.0f)) return false;
 
@@ -206,7 +239,7 @@ namespace ImOGuizmo {
 			ImVec3 cameraUp = ImVec3{ &modelMat[4] };
 			ImVec3 cameraRight = ImVec3{ &modelMat[0] };
 
-			const ImVec3 orbitUp = worldUp();
+			const ImVec3 orbitUp = axisVector(axes(coordinateSystem)[1]);
 			offset = rotateAroundAxis(offset, orbitUp, -mouseDelta.x);
 			cameraUp = rotateAroundAxis(cameraUp, orbitUp, -mouseDelta.x);
 			cameraRight = rotateAroundAxis(cameraRight, orbitUp, -mouseDelta.x);
@@ -214,7 +247,7 @@ namespace ImOGuizmo {
 			offset = rotateAroundAxis(offset, cameraRight, -mouseDelta.y);
 			cameraUp = rotateAroundAxis(cameraUp, cameraRight, -mouseDelta.y);
 
-			lookAt(pivotPos + offset, pivotPos, cameraUp, viewMatrix);
+			lookAt(pivotPos + offset, pivotPos, cameraUp, viewMatrix, coordinateSystem);
 			return true;
 		}
 	}
@@ -261,7 +294,7 @@ namespace ImOGuizmo {
 		ImGui::End();
 	}
 
-	inline bool DrawGizmo(float* const viewMatrix, const float* const projectionMatrix, const float pivotDistance = 0.0f) {
+	inline bool DrawGizmo(float* const viewMatrix, const float* const projectionMatrix, const float pivotDistance = 0.0f, const CoordinateSystem coordinateSystem = CoordinateSystem::XYZ) {
 		const float size = internal::config.mSize;
 		const float hSize = size * 0.5f;
 		const auto center = ImVec2{ internal::config.mX + hSize, internal::config.mY + hSize };
@@ -295,7 +328,7 @@ namespace ImOGuizmo {
 
 		// sort axis based on distance
 		// 0 : +x axis, 1 : +y axis, 2 : +z axis, 3 : -x axis, 4 : -y axis, 5 : -z axis
-		std::vector<std::pair<int, float>> pairs = { {0, xAxis.w}, {1, yAxis.w}, {2, zAxis.w}, {3, -xAxis.w}, {4, -yAxis.w}, {5, -zAxis.w} };
+		std::array<std::pair<int, float>, 6> pairs = { { {0, xAxis.w}, {1, yAxis.w}, {2, zAxis.w}, {3, -xAxis.w}, {4, -yAxis.w}, {5, -zAxis.w} } };
 		sort(pairs.begin(), pairs.end(), [=](const std::pair<int, float>& aA, const std::pair<int, float>& aB) { return aA.second > aB.second; });
 
 		// find selection, front to back
@@ -357,7 +390,7 @@ namespace ImOGuizmo {
 				const float dragThresholdSq = config.dragThreshold * config.dragThreshold;
 				if (d.x * d.x + d.y * d.y > dragThresholdSq) {
 					internal::interaction.dragged = true;
-					return internal::orbitView(viewMatrix, ImGui::GetIO().MouseDelta * config.dragSensitivity, pivotDistance);
+					return internal::orbitView(viewMatrix, ImGui::GetIO().MouseDelta * config.dragSensitivity, pivotDistance, coordinateSystem);
 				}
 			}
 
@@ -378,35 +411,7 @@ namespace ImOGuizmo {
 			internal::invert4x4(viewMatrix, modelMat);
 
 			const internal::ImVec3 pivotPos = internal::ImVec3{ &modelMat[12] } - internal::ImVec3{ &modelMat[8] } *pivotDistance;
-
-			internal::ImVec3 ups[6] = { 
-#ifdef IMOGUIZMO_LEFT_HANDED
-#ifdef IMOGUIZMO_Z_UP
-				{0, 0, 1}, {0, 0, 1}, {0, -1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 1, 0}
-#else // Y is up
-				{0, 1, 0}, {0, 0, 1}, {0, 1, 0}, {0, 1, 0}, {0, 0, -1}, {0, 1, 0}
-#endif
-#else // IMOGUIZMO_RIGHT_HANDED
-#ifdef IMOGUIZMO_Z_UP
-				{0, 0, 1}, {0, 0, 1}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, -1, 0}
-#else // Y is up
-				{0, 1, 0}, {0, 0, -1}, {0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 1, 0} 
-#endif
-#endif
-			};
-			// +x axis
-			if (selection == 0) internal::lookAt(pivotPos + internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, ups[0], viewMatrix);
-			// +y axis
-			if (selection == 1) internal::lookAt(pivotPos + internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, ups[1], viewMatrix);
-			// +z axis
-			if (selection == 2) internal::lookAt(pivotPos + internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, ups[2], viewMatrix);
-			// -x axis 
-			if (selection == 3) internal::lookAt(pivotPos - internal::ImVec3{ pivotDistance, 0, 0 }, pivotPos, ups[3], viewMatrix);
-			// -y axis 
-			if (selection == 4) internal::lookAt(pivotPos - internal::ImVec3{ 0, pivotDistance, 0 }, pivotPos, ups[4], viewMatrix);
-			// -z axis 
-			if (selection == 5) internal::lookAt(pivotPos - internal::ImVec3{ 0, 0, pivotDistance }, pivotPos, ups[5], viewMatrix);
-
+			internal::lookAtSelection(pivotPos, pivotDistance, selection, viewMatrix, coordinateSystem);
 			return true;
 		}
 		

@@ -18,14 +18,13 @@ ImOGuizmo::BeginFrame(); // to use you own window remove this call
 // and wrap everything in between ImGui::Begin() and ImGui::End() instead
 
 // optional: set distance to pivot (-> activates interaction)
-if(ImOGuizmo::DrawGizmo(viewMatrix, projMat, pivotDistance /* optional: default = 0.0f */))
+if(ImOGuizmo::DrawGizmo(viewMatrix, projMat, pivotDistance /* optional: default = 0.0f */, CoordinateSystem::XYZ /* optional */))
 {
 	// in case of user interaction viewMatrix gets updated
 }
 ```
 ### Note
-Use `#define IMOGUIZMO_LEFT_HANDED` in case you are using a left handed coordinate system, otherwise right handed is used. (untested)
-Use `#define IMOGUIZMO_Z_UP` in case your coordinate system has the z axis point up, otherwise y is used.
+Use `CoordinateSystem::` to configure the correct coordinate system. This is only used if the view matrix is modified.
 
 
 Drag|Click
