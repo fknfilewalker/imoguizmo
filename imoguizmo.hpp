@@ -320,7 +320,7 @@ namespace ImOGuizmo {
 		const bool hovered = interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos);
 		const bool dragging = internal::interaction.dragging;
 		SetDrawList(internal::config.mDrawList);
-		if ((config.hoverCircleColor != 0 && hovered) || dragging) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
+		if (config.hoverCircleColor != 0 && (hovered || dragging)) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
 
 		const float positiveRadius = size * config.positiveRadiusScale;
 		const float negativeRadius = size * config.negativeRadiusScale;
