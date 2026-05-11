@@ -263,6 +263,7 @@ namespace ImOGuizmo {
 		float dragThreshold = 3.0f;
 		float dragSensitivity = 0.01f;
 		bool drag = true;
+		bool click = true;
 		ImU32 xCircleFrontColor = IM_COL32(255, 54, 83, 255);
 		ImU32 xCircleBackColor = IM_COL32(154, 57, 71, 255);
 		ImU32 yCircleFrontColor = IM_COL32(138, 219, 0, 255);
@@ -317,8 +318,9 @@ namespace ImOGuizmo {
 
 		const float hoverCircleRadius = hSize * config.hoverCircleRadiusScale;
 		const bool hovered = interactive && internal::checkInsideCircle(center, hoverCircleRadius, mousePos);
+		const bool dragging = internal::interaction.dragging;
 		SetDrawList(internal::config.mDrawList);
-		if (config.hoverCircleColor != 0 && hovered) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
+		if ((config.hoverCircleColor != 0 && hovered) || dragging) internal::config.mDrawList->AddCircleFilled(center, hoverCircleRadius, config.hoverCircleColor);
 
 		const float positiveRadius = size * config.positiveRadiusScale;
 		const float negativeRadius = size * config.negativeRadiusScale;
@@ -362,22 +364,22 @@ namespace ImOGuizmo {
 		for (const auto& [fst, snd] : pairs) {
 			switch (fst) {
 			case 0: // +x axis
-				internal::drawPositiveLine(center, ImVec2{ xAxis.x, -xAxis.y }, xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, positiveRadius, lineThickness, "X", selection == 0);
+				internal::drawPositiveLine(center, ImVec2{ xAxis.x, -xAxis.y }, xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, positiveRadius, lineThickness, "X", !dragging && selection == 0);
 				continue;
 			case 1: // +y axis
-				internal::drawPositiveLine(center, ImVec2{ yAxis.x, -yAxis.y }, yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, positiveRadius, lineThickness, "Y", selection == 1);
+				internal::drawPositiveLine(center, ImVec2{ yAxis.x, -yAxis.y }, yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, positiveRadius, lineThickness, "Y", !dragging && selection == 1);
 				continue;
 			case 2: // +z axis
-				internal::drawPositiveLine(center, ImVec2{ zAxis.x, -zAxis.y }, zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, positiveRadius, lineThickness, "Z", selection == 2);
+				internal::drawPositiveLine(center, ImVec2{ zAxis.x, -zAxis.y }, zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, positiveRadius, lineThickness, "Z", !dragging && selection == 2);
 				continue;
 			case 3: // -x axis
-				internal::drawNegativeLine(center, ImVec2{ xAxis.x, -xAxis.y }, !xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, negativeRadius, selection == 3);
+				internal::drawNegativeLine(center, ImVec2{ xAxis.x, -xAxis.y }, !xPositiveCloser ? config.xCircleFrontColor : config.xCircleBackColor, negativeRadius, !dragging && selection == 3);
 				continue;
 			case 4: // -y axis
-				internal::drawNegativeLine(center, ImVec2{ yAxis.x, -yAxis.y }, !yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, negativeRadius, selection == 4);
+				internal::drawNegativeLine(center, ImVec2{ yAxis.x, -yAxis.y }, !yPositiveCloser ? config.yCircleFrontColor : config.yCircleBackColor, negativeRadius, !dragging && selection == 4);
 				continue;
 			case 5: // -z axis
-				internal::drawNegativeLine(center, ImVec2{ zAxis.x, -zAxis.y }, !zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, negativeRadius, selection == 5);
+				internal::drawNegativeLine(center, ImVec2{ zAxis.x, -zAxis.y }, !zPositiveCloser ? config.zCircleFrontColor : config.zCircleBackColor, negativeRadius, !dragging && selection == 5);
 				continue;
 			default: break;
 			}
@@ -406,7 +408,7 @@ namespace ImOGuizmo {
 			}
 		}
 
-		if (selection != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+		if (config.click && selection != -1 && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 			float modelMat[16];
 			internal::invert4x4(viewMatrix, modelMat);
 
